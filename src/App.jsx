@@ -1,11 +1,47 @@
 import React from 'react'
 import './app.css'
 import { motion } from 'framer-motion';
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, onValue } from "firebase/database";
+const firebaseConfig = {
+  apiKey: "AIzaSyAy-L83yGD00fmK321cTsS0GmMiRWpgC0E",
+  authDomain: "worldofpixels-e0c39.firebaseapp.com",
+  projectId: "worldofpixels-e0c39",
+  storageBucket: "worldofpixels-e0c39.appspot.com",
+  messagingSenderId: "472744668791",
+  appId: "1:472744668791:web:0a08b1686e7fd3fd38e072",
+  measurementId: "G-BCF4ZZ7YHZ"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase();
 
 function App() {
 
-  const [color, setColor] = React.useState('')
+  const [color, setColor] = React.useState('red')
+  const [rectangles, setRectangles] = React.useState([])
   const [newRect, setNewRect] = React.useState({ x: 0, y: 0, width: 0, height: 0 })
+
+  React.useEffect(() => {
+    const starCountRef = ref(database, 'pixels');
+    onValue(starCountRef, (snapshot) => {
+      const data = snapshot.val();
+      setRectangles(data)
+      console.log('fetched from firebase')
+    });
+  }, [])
+
+  React.useEffect(() => {
+    console.log('updating the canvas')
+    const canvas = document.getElementById('pixelCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    rectangles.forEach(rect => {
+      ctx.fillStyle = rect.color;
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+    })
+  }, [rectangles])
 
   React.useEffect(() => {
     const canvas = document.getElementById('pixelCanvas');
@@ -42,26 +78,35 @@ function App() {
       requestAnimationFrame(draw)
     }
 
-    function drawRectangle(x, y) {
-      ctx.fillStyle = '#fafafa';
+    function drawRectangle(x, y, color) {
+      ctx.fillStyle = color;
       ctx.fillRect(x, y, rectWidth, rectHeight);
     }
 
     let rectangles = []
 
     function createRectanglePattern() {
-      for (let i = 0; i < canvas.width; i += (rectWidth + spacing)) {
-        for (let j = 0; j < canvas.height; j += (rectHeight + spacing)) {
-          drawRectangle(i, j);
-          const rect = {
-            x: i,
-            y: j,
-            width: 10,
-            height: 10
+      const starCountRef = ref(database, 'pixels');
+      onValue(starCountRef, (snapshot) => {
+        const data = snapshot.val();
+        if(data){
+          data.forEach(rect => {
+            drawRectangle(rect.x, rect.y, rect.color)
+          })
+          setRectangles(data)
+        }else{
+          for (let x = 0; x < canvasWidth; x += rectWidth + spacing) {
+            for (let y = 0; y < canvasHeight; y += rectHeight + spacing) {
+              drawRectangle(x, y, '#fafafa')
+              rectangles.push({ x, y, width: rectWidth, height: rectHeight, color: '#fafafa' })
+            }
           }
-          rectangles.push(rect)
+          setRectangles(rectangles)
         }
-      }
+      });
+      
+      
+      // console.log(rectangles)
     }
 
     createRectanglePattern()
@@ -167,10 +212,10 @@ function App() {
             x: rect.x,
             y: rect.y,
             width: rect.width,
-            height: rect.height
+            height: rect.height,
           }
+          setRectangles(rectangles)
           setNewRect(newRect)
-          
         }
       })
     })
@@ -191,6 +236,16 @@ function App() {
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = color;
     ctx.fillRect(newRect.x, newRect.y, newRect.width, newRect.height);
+
+    rectangles.forEach(rect => {
+      if(rect.x === newRect.x && rect.y === newRect.y) {
+        rect.color = color
+      }
+    })
+
+    set(ref(database, 'pixels'), rectangles);
+    setRectangles(rectangles)
+    // console.log(rectangles)
   }, [newRect])
 
   const handleColor = (newcolor) => {
@@ -205,37 +260,31 @@ function App() {
           <motion.div
             onClick={() => handleColor('red')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-red-500 rounded-[50%] px-5 py-5'>
           </motion.div>
           <motion.div
             onClick={() => handleColor('green')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-green-500 rounded-[50%] px-5 py-5'>
           </motion.div>
           <motion.div
             onClick={() => handleColor('blue')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-blue-500 rounded-[50%] px-5 py-5'>
           </motion.div>
           <motion.div
             onClick={() => handleColor('orange')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-orange-500 rounded-[50%] px-5 py-5'>
           </motion.div>
           <motion.div
             onClick={() => handleColor('yellow')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-yellow-500 rounded-[50%] px-5 py-5'>
           </motion.div>
           <motion.div
             onClick={() => handleColor('purple')}
             whileHover={{ scale: 1.2 }}
-            // whileTap={{ scale: 1 }}
             className='hover:cursor-pointer bg-purple-500 rounded-[50%] px-5 py-5'>
           </motion.div>
         </div>
