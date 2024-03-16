@@ -13,7 +13,7 @@ const firebaseConfig = {
   measurementId: "G-BCF4ZZ7YHZ"
 };
 
-const app = initializeApp(firebaseConfig);
+initializeApp(firebaseConfig);
 
 function App() {
 
@@ -32,6 +32,29 @@ function App() {
           ctx.fillStyle = rect.color;
           ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
         }
+      })
+
+      function isMouseInsideRect(x, y, rect) {
+        return x >= rect.x && x <= rect.x + rect.width &&
+              y >= rect.y && y <= rect.y + rect.height;
+      }
+  
+      canvas.addEventListener('click', function(event) {
+        const mouseX = event.offsetX;
+        const mouseY = event.offsetY;
+        rectangles.forEach(rect => {
+          if (isMouseInsideRect(mouseX, mouseY, rect)) {
+            console.log(rect.x, rect.y)
+            const newRect = {
+              x: rect.x,
+              y: rect.y,
+              width: rect.width,
+              height: rect.height,
+            }
+  
+            setNewRect(newRect)
+          }
+        })
       })
     }
   }, [rectangles])
@@ -84,34 +107,12 @@ function App() {
 
     createRectanglePattern()
 
-    function isMouseInsideRect(x, y, rect) {
-      return x >= rect.x && x <= rect.x + rect.width &&
-            y >= rect.y && y <= rect.y + rect.height;
-    }
-
-    canvas.addEventListener('click', function(event) {
-      const mouseX = event.offsetX;
-      const mouseY = event.offsetY;
-      rectangles.forEach(rect => {
-        if (isMouseInsideRect(mouseX, mouseY, rect)) {
-          console.log(rect.x, rect.y)
-          const newRect = {
-            x: rect.x,
-            y: rect.y,
-            width: rect.width,
-            height: rect.height,
-          }
-
-          setNewRect(newRect)
-        }
-      })
-    })
+    
       
   }, [])
 
   React.useEffect(() => {
     const database = getDatabase();
-
     if(newRect.x){
       const canvas = document.getElementById('pixelCanvas');
       const ctx = canvas.getContext('2d');
@@ -130,7 +131,7 @@ function App() {
       set(ref(database, 'pixels'), updatedRectangles);
   
       setRectangles(updatedRectangles)
-      
+
     }
   }, [newRect])
 
