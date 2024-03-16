@@ -3,6 +3,8 @@ import './app.css'
 import { motion } from 'framer-motion';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, get, child } from "firebase/database";
+import gsap from 'gsap';
+
 const firebaseConfig = {
   apiKey: "AIzaSyAy-L83yGD00fmK321cTsS0GmMiRWpgC0E",
   authDomain: "worldofpixels-e0c39.firebaseapp.com",
@@ -17,9 +19,13 @@ initializeApp(firebaseConfig);
 
 function App() {
 
+  const customInput = React.useRef(null)
+  const customDiv = React.useRef(null)
   const [color, setColor] = React.useState('red')
   const [rectangles, setRectangles] = React.useState([])
   const [newRect, setNewRect] = React.useState({})
+  const [noYes, setNoYes] = React.useState(false)
+  const [customColorSet, setCustomColorSet] = React.useState(false)
 
   React.useEffect(() => {
     const canvas = document.getElementById('pixelCanvas');
@@ -106,8 +112,6 @@ function App() {
     }
 
     createRectanglePattern()
-
-    
       
   }, [])
 
@@ -136,7 +140,40 @@ function App() {
   }, [newRect])
 
   const handleColor = (newcolor) => {
-    setColor(newcolor)
+    if(newcolor.length <= 7){
+      setColor(newcolor)
+    }
+  }
+
+  const handleCustom = () => {
+    gsap.to(customInput.current, { duration: 0.5, width: "100px", textAlign: 'initial', paddingLeft: '10px', borderRadius: '10px', fontSize: '20px', ease: "bounce", marginLeft: '10px' });
+    customInput.current.value = ''
+    customInput.current.placeholder = '#000000'
+
+    setNoYes(true)
+  }
+
+  React.useEffect(() => {
+    console.log('new color set')
+    if(customColorSet){
+      console.log('new color set', color)
+      customDiv.current.style.backgroundColor = color
+    }
+  }, [color, customColorSet])
+
+  const handleCustomColor = () => {
+    setNoYes(false)
+    setCustomColorSet(true)
+    gsap.to(customInput.current, { duration: 0.5, width: "40px", textAlign: 'center', paddingLeft: '0px', borderRadius: '50%', fontSize: '30px', ease: "bounce" });
+    customInput.current.value = '+'
+    console.log(color)
+  }
+
+  const handleCancelCustom = () => {
+    gsap.to(customInput.current, { duration: 0.5, width: "40px", textAlign: 'center', paddingLeft: '0px', borderRadius: '50%', fontSize: '30px', ease: "bounce" });
+    customInput.current.value = '+'
+
+    setNoYes(false)
   }
 
   return (
@@ -174,6 +211,38 @@ function App() {
             whileHover={{ scale: 1.2 }}
             className='hover:cursor-pointer bg-purple-500 rounded-[50%] px-5 py-5'>
           </motion.div>
+          {customColorSet && <motion.div
+            ref={customDiv}
+            onClick={() => handleColor(color)}
+            whileHover={{ scale: 1.2 }}
+            className={`hover:cursor-pointer rounded-[50%] px-5 py-5`}>
+            </motion.div>
+          }
+          <motion.input
+            onClick={() => handleCustom()}
+            whileHover={{ scale: 1.2 }}
+            defaultValue="+"
+            onChange={e => handleColor(e.target.value)}
+            ref={customInput}
+            className='hover:cursor-pointer rounded-[50%] w-[40px] text-3xl text-center border border-2 px-0 py-0' />
+          
+          
+          {noYes &&
+            <div className='ml-2 flex'>
+              <motion.button 
+                onClick={handleCancelCustom}
+                whileHover={{ scale: 1.2 }}
+                className='rounded-[50%] px-3 py-1 border border-2 mr-2'>
+                  <i className="fa-solid fa-xmark"></i>
+              </motion.button>
+              <motion.button 
+                onClick={handleCustomColor}
+                whileHover={{ scale: 1.2 }}
+                className='rounded-[50%] px-3 py-1 bg-green-500'>
+                  <i className="fa-solid fa-check text-white"></i>
+              </motion.button>
+            </div>
+          }
         </div>
       </div>
     </div>
