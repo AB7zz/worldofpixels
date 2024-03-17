@@ -25,47 +25,52 @@ function App() {
   const [rectangles, setRectangles] = React.useState([])
   const [newRect, setNewRect] = React.useState({})
   const [noYes, setNoYes] = React.useState(false)
+  const [loading, setLoading] = React.useState(true)
   const [customColorSet, setCustomColorSet] = React.useState(false)
 
   React.useEffect(() => {
-    const canvas = document.getElementById('pixelCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if(rectangles){
-      console.log('updating the canvas')
-      rectangles.forEach(rect => {
-        if(rect && rect.color && rect.x && rect.y && rect.width && rect.height){
-          ctx.fillStyle = rect.color;
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        }
-      })
-
-      function isMouseInsideRect(x, y, rect) {
-        return x >= rect.x && x <= rect.x + rect.width &&
-              y >= rect.y && y <= rect.y + rect.height;
-      }
-  
-      canvas.addEventListener('click', function(event) {
-        const mouseX = event.offsetX;
-        const mouseY = event.offsetY;
+    console.log(loading)
+    if(!loading){
+      const canvas = document.getElementById('pixelCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if(rectangles){
+        console.log('updating the canvas')
         rectangles.forEach(rect => {
-          if (isMouseInsideRect(mouseX, mouseY, rect)) {
-            console.log(rect.x, rect.y)
-            const newRect = {
-              x: rect.x,
-              y: rect.y,
-              width: rect.width,
-              height: rect.height,
-            }
-  
-            setNewRect(newRect)
+          if(rect && rect.color && rect.x && rect.y && rect.width && rect.height){
+            ctx.fillStyle = rect.color;
+            ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
           }
         })
-      })
+
+        function isMouseInsideRect(x, y, rect) {
+          return x >= rect.x && x <= rect.x + rect.width &&
+                y >= rect.y && y <= rect.y + rect.height;
+        }
+    
+        canvas.addEventListener('click', function(event) {
+          const mouseX = event.offsetX;
+          const mouseY = event.offsetY;
+          rectangles.forEach(rect => {
+            if (isMouseInsideRect(mouseX, mouseY, rect)) {
+              console.log(rect.x, rect.y)
+              const newRect = {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+              }
+    
+              setNewRect(newRect)
+            }
+          })
+        })
+      }
     }
-  }, [rectangles])
+  }, [rectangles, loading])
 
   React.useEffect(() => {
+    console.log(loading)
     const database = getDatabase();
     const dbRef = ref(database, 'pixels');
     onValue(dbRef, (snapshot) => {
@@ -74,12 +79,11 @@ function App() {
       console.log('fetched from firebase')
     });
 
-    const canvas = document.getElementById('pixelCanvas');
+    
 
     const canvasWidth = 2500;
     const canvasHeight = 2500;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
+    
 
     const rectWidth = 10;
     const rectHeight = 10;
@@ -94,6 +98,7 @@ function App() {
           console.log('Data available')
           const data = snapshot.val();
           setRectangles(data)
+          setLoading(false)
         } else {
           console.log("No data available");
           for (let x = 0; x < canvasWidth; x += rectWidth + spacing) {
@@ -102,6 +107,7 @@ function App() {
             }
           }
           setRectangles(rectangles)
+          setLoading(false)
         }
       }).catch((error) => {
         console.error(error);
@@ -112,8 +118,14 @@ function App() {
     }
 
     createRectanglePattern()
-      
-  }, [])
+    if(!loading){
+      const canvas = document.getElementById('pixelCanvas');
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+    }
+    
+    
+  }, [loading])
 
   React.useEffect(() => {
     const database = getDatabase();
@@ -178,77 +190,92 @@ function App() {
 
   return (
     <>
-    <div className='absolute z-20 left-[30%]'>
-      <div className='bg-white rounded-[100px] px-5 py-3 w-[500px]'>
-        <div className='flex justify-around'>
-          <motion.div
-            onClick={() => handleColor('red')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-red-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          <motion.div
-            onClick={() => handleColor('green')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-green-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          <motion.div
-            onClick={() => handleColor('blue')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-blue-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          <motion.div
-            onClick={() => handleColor('orange')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-orange-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          <motion.div
-            onClick={() => handleColor('yellow')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-yellow-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          <motion.div
-            onClick={() => handleColor('purple')}
-            whileHover={{ scale: 1.2 }}
-            className='hover:cursor-pointer bg-purple-500 rounded-[50%] px-5 py-5'>
-          </motion.div>
-          {customColorSet && <motion.div
-            ref={customDiv}
-            onClick={() => handleColor(color)}
-            whileHover={{ scale: 1.2 }}
-            className={`hover:cursor-pointer rounded-[50%] px-5 py-5`}>
+      <div className='absolute z-20 left-[30%]'>
+        <div className='bg-white rounded-[100px] px-5 py-3 w-[500px]'>
+          <div className='flex justify-around'>
+            <motion.div
+              onClick={() => handleColor('red')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-red-500 rounded-[50%] px-5 py-5'>
             </motion.div>
-          }
-          <motion.input
-            onClick={() => handleCustom()}
-            whileHover={{ scale: 1.2 }}
-            defaultValue="+"
-            onChange={e => handleColor(e.target.value)}
-            ref={customInput}
-            className='hover:cursor-pointer rounded-[50%] w-[40px] text-3xl text-center border border-2 px-0 py-0' />
-          
-          
-          {noYes &&
-            <div className='ml-2 flex'>
-              <motion.button 
-                onClick={handleCancelCustom}
-                whileHover={{ scale: 1.2 }}
-                className='rounded-[50%] px-3 py-1 border border-2 mr-2'>
-                  <i className="fa-solid fa-xmark"></i>
-              </motion.button>
-              <motion.button 
-                onClick={handleCustomColor}
-                whileHover={{ scale: 1.2 }}
-                className='rounded-[50%] px-3 py-1 bg-green-500'>
-                  <i className="fa-solid fa-check text-white"></i>
-              </motion.button>
-            </div>
-          }
+            <motion.div
+              onClick={() => handleColor('green')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-green-500 rounded-[50%] px-5 py-5'>
+            </motion.div>
+            <motion.div
+              onClick={() => handleColor('blue')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-blue-500 rounded-[50%] px-5 py-5'>
+            </motion.div>
+            <motion.div
+              onClick={() => handleColor('orange')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-orange-500 rounded-[50%] px-5 py-5'>
+            </motion.div>
+            <motion.div
+              onClick={() => handleColor('yellow')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-yellow-500 rounded-[50%] px-5 py-5'>
+            </motion.div>
+            <motion.div
+              onClick={() => handleColor('purple')}
+              whileHover={{ scale: 1.2 }}
+              className='hover:cursor-pointer bg-purple-500 rounded-[50%] px-5 py-5'>
+            </motion.div>
+            {customColorSet && <motion.div
+              ref={customDiv}
+              onClick={() => handleColor(color)}
+              whileHover={{ scale: 1.2 }}
+              className={`hover:cursor-pointer rounded-[50%] px-5 py-5`}>
+              </motion.div>
+            }
+            <motion.input
+              onClick={() => handleCustom()}
+              whileHover={{ scale: 1.2 }}
+              defaultValue="+"
+              onChange={e => handleColor(e.target.value)}
+              ref={customInput}
+              className='hover:cursor-pointer rounded-[50%] w-[40px] text-3xl text-center border border-2 px-0 py-0' />
+            
+            
+            {noYes &&
+              <div className='ml-2 flex'>
+                <motion.button 
+                  onClick={handleCancelCustom}
+                  whileHover={{ scale: 1.2 }}
+                  className='rounded-[50%] px-3 py-1 border border-2 mr-2'>
+                    <i className="fa-solid fa-xmark"></i>
+                </motion.button>
+                <motion.button 
+                  onClick={handleCustomColor}
+                  whileHover={{ scale: 1.2 }}
+                  className='rounded-[50%] px-3 py-1 bg-green-500'>
+                    <i className="fa-solid fa-check text-white"></i>
+                </motion.button>
+              </div>
+            }
+          </div>
         </div>
       </div>
-    </div>
+      {loading ?
+      <div class="load-container">
+        <div class="loader">
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+          <span class="loader-block"></span>
+        </div>
+      </div>
+      :
       <div id="canvasContainer">
         <canvas className='' id="pixelCanvas"></canvas>
-      </div>
+      </div>}
     </>
   )
 }
