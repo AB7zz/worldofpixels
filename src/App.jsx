@@ -1,5 +1,5 @@
 import React from 'react'
-import './app.css'
+import './App.css'
 import { motion } from 'framer-motion';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue, get, child } from "firebase/database";
