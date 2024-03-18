@@ -2,7 +2,7 @@ import React from 'react'
 import './App.css'
 import { motion } from 'framer-motion';
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue, get, child } from "firebase/database";
+import { getDatabase, ref, set, onValue, get, child, update } from "firebase/database";
 import gsap from 'gsap';
 
 const firebaseConfig = {
@@ -51,10 +51,11 @@ function App() {
         canvas.addEventListener('click', function(event) {
           const mouseX = event.offsetX;
           const mouseY = event.offsetY;
-          rectangles.forEach(rect => {
+          rectangles.forEach((rect, i) => {
             if (isMouseInsideRect(mouseX, mouseY, rect)) {
-              console.log(rect.x, rect.y)
+              console.log(i, rect.x, rect.y, color)
               const newRect = {
+                i,
                 x: rect.x,
                 y: rect.y,
                 width: rect.width,
@@ -134,19 +135,12 @@ function App() {
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = color;
       ctx.fillRect(newRect.x, newRect.y, newRect.width, newRect.height);
-      
-      const updatedRectangles = rectangles.map(rect => {
-        if(rect.x === newRect.x && rect.y === newRect.y) {
-          return { ...rect, color: color }
-        }
-        return rect
-      })
 
-      console.log('updatedRectangles', updatedRectangles)
+      const pixelRef = ref(database, `pixels/${newRect.i}`);
 
-      set(ref(database, 'pixels'), updatedRectangles);
-  
-      setRectangles(updatedRectangles)
+      update(pixelRef, {
+        color
+      });
 
     }
   }, [newRect])
