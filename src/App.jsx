@@ -114,8 +114,6 @@ function App() {
         console.error(error);
       });
       
-      
-      // console.log(rectangles)
     }
 
     createRectanglePattern()
